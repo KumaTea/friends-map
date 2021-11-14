@@ -1,12 +1,24 @@
 import os
 import re
 import pickle
-from db import *
 from random import choice
 
+try:
+    from debugDB import *
+except ImportError:
+    from db import *
 
-def get_twitter_username(text):
+
+def find_twitter_username(text):
     return re.findall(r'@[a-zA-Z0-9_]{1,15}', text)
+
+
+def lower_list(original_list: list):
+    return [x.lower() for x in original_list]
+
+
+def remove_leading_at(original_list: list):
+    return [x[1:] for x in original_list]
 
 
 if __name__ == '__main__':
@@ -20,37 +32,70 @@ if __name__ == '__main__':
     nodes_html = ''
     edges_html = ''
 
+    # Generate a dict, key is the lowercase of username, value is a list of mentioned username
     for user in data:
-        lower_user = []
-        users = []
-        raw_users = get_twitter_username(data[user].description)
-        for i in raw_users:
-            if not i.lower() in lower_user:
-                users.append(i)
-                lower_user.append(i.lower())
-        relation_map[data[user].screen_name] = users.copy()
+        raw_users = find_twitter_username(data[user].description)
+        lower_users = lower_list(raw_users)
+        users = list(set(remove_leading_at(lower_users)))
+        relation_map[data[user].screen_name.lower()] = users.copy()
 
-    index = 1
+    # Slim the dict, remove single-mentioned relationship
+    # Removes: self-mentioning (A -> A), one-step-mentioning (A -> B)
+    # Keeps: mention-mentioning (A -> B -> A), two-step-mentioning (A -> B -> C) and more
+
+    mentioning = []
+    mentioned = []
+
+    # First find all the users that are mentioned
     for user in relation_map:
         for target in relation_map[user]:
-            if (u := f'@{user}'.lower()) not in user_index:
-                user_index[u] = index
-                index += 1
-            if (t := target.lower()) not in user_index:
-                user_index[t] = index
+            mentioning.append(user)
+            mentioned.append(target)
+    # Do not remove duplicates
+
+    map_copy = relation_map.copy()
+    for user in map_copy:
+        if len(map_copy[user]) == 0:  # Does not mention anyone in bio
+            del relation_map[user]
+        elif len(map_copy[user]) == 1:  # Only mentions one person
+            target = map_copy[user][0]
+            if user == target:  # Self-mentioning
+                mentioned_times = mentioned.count(target)
+                if mentioned_times < 2:
+                    del relation_map[user]
+            else:
+                if target not in mentioning:  # Else: chain
+                    mentioned_times = mentioned.count(target)
+                    if mentioned_times < 2:
+                        del relation_map[user]
+    del map_copy
+
+    # Generate a dict, key is the lowercase of username, value is the index of the node
+    index = 1
+    for user in relation_map:
+        if user not in user_index:
+            user_index[user] = index
+            index += 1
+        for target in relation_map[user]:
+            if target not in user_index:
+                user_index[target] = index
                 index += 1
 
+    # Generate the nodes and edges
     for user in user_index:
+        label = f'@{user}'
+        for i in data:
+            if user == data[i].screen_name.lower():
+                label = data[i].name
+                break
         nodes_html += f'{blank_space}{{id: {user_index[user]}, ' \
-                      f'label: \'{user}\', ' \
-                      f'url: \'https://twitter.com/{user[1:]}\', ' \
+                      f'label: \'{label}\', ' \
+                      f'url: \'https://twitter.com/{user}\', ' \
                       f'color: \'{choice(colors)}\'}},\n'
 
     for user in relation_map:
         for target in relation_map[user]:
-            u = f'@{user}'.lower()
-            t = target.lower()
-            edges_html += f'{blank_space}{{from: {user_index[u]}, to: {user_index[t]}}},\n'
+            edges_html += f'{blank_space}{{from: {user_index[user]}, to: {user_index[target]}}},\n'
 
     html_code = html_code.replace('TITLE_PLACEHOLDER', 'KumaTea Friends Map ' + datetime.now().strftime('%m/%d'))
     html_code = html_code.replace('NODES_PLACEHOLDER', nodes_html)
