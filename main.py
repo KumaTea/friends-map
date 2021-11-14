@@ -1,5 +1,6 @@
 import os
 import re
+import json
 import pickle
 from random import choice
 
@@ -83,13 +84,13 @@ if __name__ == '__main__':
 
     # Generate the nodes and edges
     for user in user_index:
-        label = f'@{user}'
+        label = f'\'@{user}\''
         for i in data:
             if user == data[i].screen_name.lower():
-                label = data[i].name
+                label = json.dumps(data[i].name)
                 break
         nodes_html += f'{blank_space}{{id: {user_index[user]}, ' \
-                      f'label: \'{label}\', ' \
+                      f'label: {label}, ' \
                       f'url: \'https://twitter.com/{user}\', ' \
                       f'color: \'{choice(colors)}\'}},\n'
 
