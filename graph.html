@@ -1,0 +1,59 @@
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>TITLE_PLACEHOLDER</title>
+  <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+  <style>
+      #myNetwork {
+          border: 0 solid lightgray;
+      }
+  </style>
+</head>
+<body>
+<div id="myNetwork"></div>
+
+<script type="text/javascript">
+    // create an array with nodes
+    const nodes = new vis.DataSet([
+NODES_PLACEHOLDER
+    ]);
+
+    // create an array with edges
+    const edges = new vis.DataSet([
+EDGES_PLACEHOLDER
+    ]);
+
+    // create a network
+    const container = document.getElementById('myNetwork');
+
+    // provide the data in the vis format
+    const data = {
+        nodes: nodes,
+        edges: edges
+    };
+    const options = {
+        autoResize: true,
+        height: '100%',
+        width: '100%',
+        edges: {
+            arrows: 'to',
+        },
+        nodes: {
+            shape: 'dot',
+        }
+    };
+
+    // initialize your network!
+    const network = new vis.Network(container, data, options);
+
+    network.on("click", function (params) {
+        if (params.nodes.length === 1) {
+            const node = nodes.get(params.nodes[0]);
+            if (node.url != null) {
+                window.open(node.url, '_blank');
+            }
+        }
+    });
+</script>
+</body>
+</html>
