@@ -57,22 +57,25 @@ def generate_content(relation, u_index, u_data, h_code):
     # Generate the nodes and edges
     n_html = ''
     e_html = ''
+    u_index_list = list(u_index.keys())
     for u in u_index:
-        label = f'\'@{u}\''
+        label = f'\'@\' + users[{u_index_list.index(u)}]'
         for i in u_data:
             if u == u_data[i].screen_name.lower():
-                label = json.dumps(u_data[i].name)
+                # label = json.dumps(u_data[i].name)
+                label = f'\'{u_data[i].name}\''
                 break
         n_html += f'{blank_space}{{id: {u_index[u]}, ' \
-                      f'label: {label}, ' \
-                      f'url: \'https://twitter.com/{u}\', ' \
-                      f'color: \'{choice(colors)}\'}},\n'
+                  f'label: {label}, ' \
+                  f'url: twi + users[{u_index_list.index(u)}], ' \
+                  f'color: colors[{colors.index(choice(colors))}]}},\n'
 
     for u in relation:
         for target in relation[u]:
             e_html += f'{blank_space}{{from: {u_index[u]}, to: {u_index[target]}}},\n'
 
     h_code = h_code.replace('TITLE_PLACEHOLDER', 'KumaTea Friends Map ' + datetime.now().strftime('%m/%d'))
+    h_code = h_code.replace('USERS_PLACEHOLDER', f'const users = {json.dumps(u_index_list)};')
     h_code = h_code.replace('NODES_PLACEHOLDER', n_html)
     h_code = h_code.replace('EDGES_PLACEHOLDER', e_html)
 

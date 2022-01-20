@@ -1,6 +1,7 @@
 import os
 import pickle
 from map import *
+from tools import slim_html
 
 
 if __name__ == '__main__':
@@ -20,6 +21,8 @@ if __name__ == '__main__':
 
     # Generate the html code
     new_html_code = generate_content(relation_map, user_index, data, html_code)
+
+    new_html_code = slim_html(new_html_code)
 
     with open('index.html', 'w', encoding='utf-8') as f:
         f.write(new_html_code)
