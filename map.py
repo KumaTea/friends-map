@@ -63,7 +63,7 @@ def generate_content(relation, u_index, u_data, h_code):
         for i in u_data:
             if u == u_data[i].screen_name.lower():
                 # label = json.dumps(u_data[i].name)
-                label = f'\'{u_data[i].name}\''
+                label = f'\'{u_data[i].name}\'' if '\'' not in u_data[i].name else f'\"{u_data[i].name}\"'
                 break
         n_html += f'{blank_space}{{id: {u_index[u]}, ' \
                   f'label: {label}, ' \
